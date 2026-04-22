@@ -7,6 +7,7 @@ from Database.db import get_session
 from Database.models import SalesTransaction
 from Analytics.time_analysis import revenue_over_time
 from Analytics.growth_rate import growth_rate_over_time
+from Analytics.avg_order_value import avg_order_value
 
 
 def show_dashboard():
@@ -101,3 +102,16 @@ def show_dashboard():
     top_product = top_products.iloc[0]["product_name"]
 
     st.info(f"Top performing product: {top_product}")
+
+    # ---------------- Average Order Value ----------------
+    st.subheader("Average Order Value Over Time")
+    avg_order_values = avg_order_value(selected_category, selected_region)
+    avg_order_df = pd.DataFrame(avg_order_values, columns=["quarter", "avg_order_value"])
+
+    if not avg_order_df.empty:
+        avg_order_df["sort_key"] = pd.PeriodIndex(avg_order_df["quarter"], freq="Q").to_timestamp()
+        avg_order_df = avg_order_df.sort_values("sort_key").drop(columns=["sort_key"])
+
+    fig = px.line(avg_order_df, x="quarter", y="avg_order_value", markers=True)
+    fig.update_layout(xaxis_title="Quarter", yaxis_title="Average Order Value")
+    st.plotly_chart(fig, use_container_width=True)
