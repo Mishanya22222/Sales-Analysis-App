@@ -6,6 +6,7 @@ from sqlmodel import select
 from Database.db import get_session
 from Database.models import SalesTransaction
 from Analytics.time_analysis import revenue_over_time
+from Analytics.growth_rate import growth_rate_over_time
 
 
 def show_dashboard():
@@ -69,6 +70,18 @@ def show_dashboard():
     fig = px.line(trend, x="quarter", y="revenue", markers=True)
     fig.update_layout(xaxis_title="Quarter", yaxis_title="Revenue")
     st.plotly_chart(fig, use_container_width=True)
+
+    # ---------------- GROWTH RATE ----------------
+    st.subheader("Revenue Growth Rate Over Time")
+    growth_rows = growth_rate_over_time(selected_category, selected_region)
+    growth = pd.DataFrame(growth_rows, columns=["quarter", "growth_rate"])
+    if not growth.empty:
+        growth["sort_key"] = pd.PeriodIndex(growth["quarter"], freq="Q").to_timestamp()
+        growth = growth.sort_values("sort_key").drop(columns=["sort_key"])
+
+    fig3 = px.line(growth, x="quarter", y="growth_rate", markers=True)
+    fig3.update_layout(xaxis_title="Quarter", yaxis_title="Growth Rate")
+    st.plotly_chart(fig3, use_container_width=True)
 
     # ---------------- TOP PRODUCTS ----------------
     st.subheader("Top Products")
