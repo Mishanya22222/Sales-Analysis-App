@@ -2,9 +2,10 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-from sqlmodel import select, func
+from sqlmodel import select
 from Database.db import get_session
 from Database.models import SalesTransaction
+from Analytics.time_analysis import revenue_over_time
 
 
 def show_dashboard():
@@ -58,10 +59,15 @@ def show_dashboard():
     # ---------------- REVENUE TREND ----------------
     st.subheader("Revenue Over Time")
 
-    df["order_date"] = pd.to_datetime(df["order_date"])
-    trend = df.groupby("order_date")["revenue"].sum().reset_index()
+    trend_rows = revenue_over_time(selected_category, selected_region)
+    trend = pd.DataFrame(trend_rows, columns=["quarter", "revenue"])
 
-    fig = px.line(trend, x="order_date", y="revenue")
+    if not trend.empty:
+        trend["sort_key"] = pd.PeriodIndex(trend["quarter"], freq="Q").to_timestamp()
+        trend = trend.sort_values("sort_key").drop(columns=["sort_key"])
+
+    fig = px.line(trend, x="quarter", y="revenue", markers=True)
+    fig.update_layout(xaxis_title="Quarter", yaxis_title="Revenue")
     st.plotly_chart(fig, use_container_width=True)
 
     # ---------------- TOP PRODUCTS ----------------
